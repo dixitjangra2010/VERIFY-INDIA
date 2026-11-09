@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>VERIFY INDIA — Government Product Verification System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+<style>
+:root{
+  --purple:#6A0DAD;
+  --purple-deep:#4B0A7A;
+  --lavender:#F1E9FB;
+  --lavender-2:#E4D4F7;
+  --bg:#ffffff;
+  --surface:#FFFFFF;
+  --ink:#1B1230;
+  --ink-soft:#5B5468;
+  --success:#1E9E5A;
+  --success-bg:#E8F8EF;
+  --warning:#E08A00;
+  --warning-bg:#FFF4E2;
+  --error:#D6293E;
+  --error-bg:#FDEAEC;
+  --border:#E9E1F5;
+  --shadow: 0 8px 24px rgba(106,13,173,0.10);
+  --shadow-sm: 0 2px 8px rgba(106,13,173,0.08);
+  --radius: 18px;
+  --radius-sm: 12px;
+  --font-display: 'Poppins', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+[data-theme="dark"]{
+  --bg:#150C24;
+  --surface:#20142F;
+  --ink:#F3EEFB;
+  --ink-soft:#B7A9D1;
+  --lavender:#2A1B42;
+  --lavender-2:#33224F;
+  --border:#3A2A54;
+  --shadow: 0 8px 24px rgba(0,0,0,0.35);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+}
+body{
+  margin:0; font-family:var(--font-body); background:var(--bg); color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+}
+#app{max-width:480px; margin:0 auto; min-height:100vh; background:var(--bg); position:relative; overflow-x:hidden;}
+h1,h2,h3,.display{font-family:var(--font-display); font-weight:600; margin:0;}
+p{margin:0;}
+button{font-family:var(--font-body); cursor:pointer; border:none; background:none;}
+a{color:inherit;}
+
+/* ---------- Screen management ---------- */
+.screen{display:none; min-height:100vh; padding-bottom:88px; animation:fadeIn .35s ease;}
+.screen.active{display:block;}
+@keyframes fadeIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+
+/* ---------- Splash ---------- */
+#splash{
+  position:fixed; inset:0; z-index:999; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:linear-gradient(160deg, var(--purple) 0%, var(--purple-deep) 100%);
+  color:#fff; text-align:center;
+}
+.shield-wrap{position:relative; width:120px; height:120px; display:flex; align-items:center; justify-content:center; animation:fadeScaleIn 1s ease;}
+@keyframes fadeScaleIn{from{opacity:0; transform:scale(.7);} to{opacity:1; transform:scale(1);}}
+.shield-glow{position:absolute; inset:-20px; border-radius:50%; background:radial-gradient(circle, rgba(255,255,255,0.35), transparent 70%); animation:pulseGlow 2s ease-in-out infinite;}
+@keyframes pulseGlow{0%,100%{opacity:.5; transform:scale(.9);} 50%{opacity:1; transform:scale(1.1);}}
+.shield-svg{position:relative; z-index:2; filter:drop-shadow(0 4px 14px rgba(0,0,0,0.25));}
+.splash-title{margin-top:26px; font-size:26px; letter-spacing:1px;}
+.splash-sub{margin-top:8px; font-size:13px; opacity:.85; letter-spacing:.5px;}
+.splash-progress{margin-top:34px; width:140px; height:4px; border-radius:4px; background:rgba(255,255,255,0.25); overflow:hidden;}
+.splash-progress-bar{height:100%; width:0%; background:#fff; border-radius:4px; animation:loadBar 2.4s ease forwards;}
+@keyframes loadBar{from{width:0%;} to{width:100%;}}
+
+/* ---------- Top bar ---------- */
+.topbar{display:flex; align-items:center; justify-content:space-between; padding:18px 20px 10px; position:sticky; top:0; background:var(--bg); z-index:10;}
+.topbar .brand{display:flex; align-items:center; gap:10px;}
+.topbar .brand-name{font-size:17px; font-weight:700; color:var(--purple);}
+.icon-btn{width:38px; height:38px; border-radius:50%; background:var(--lavender); display:flex; align-items:center; justify-content:center; color:var(--purple);}
+.icon-btn:active{transform:scale(.92);}
+
+/* ---------- Home ---------- */
+.hero{margin:8px 20px 0; padding:26px 22px; border-radius:24px; background:linear-gradient(135deg, var(--purple), var(--purple-deep)); color:#fff; box-shadow:var(--shadow); position:relative; overflow:hidden;}
+.hero::after{content:""; position:absolute; right:-40px; top:-40px; width:160px; height:160px; border-radius:50%; background:rgba(255,255,255,0.08);}
+.hero h2{font-size:20px; line-height:1.35;}
+.hero p{margin-top:6px; font-size:13px; opacity:.88;}
+.scan-cta{
+  margin-top:18px; width:100%; padding:16px; border-radius:16px; background:#fff; color:var(--purple);
+  font-family:var(--font-display); font-weight:600; font-size:15px; display:flex; align-items:center; justify-content:center; gap:10px;
+  box-shadow:0 6px 16px rgba(0,0,0,0.18); position:relative; overflow:hidden;
+}
+.ripple{position:relative; overflow:hidden;}
+.ripple-el{position:absolute; border-radius:50%; background:rgba(106,13,173,0.25); transform:scale(0); animation:rippleAnim .6s ease-out;}
+@keyframes rippleAnim{to{transform:scale(3); opacity:0;}}
+
+.quick-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:18px 20px 0;}
+.quick-card{
+  background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px 14px; text-align:left;
+  box-shadow:var(--shadow-sm); display:flex; flex-direction:column; gap:8px; transition:transform .15s ease;
+}
+.quick-card:active{transform:scale(.96);}
+.quick-card .qi{width:36px; height:36px; border-radius:10px; background:var(--lavender); display:flex; align-items:center; justify-content:center; font-size:17px;}
+.quick-card span{font-size:13.5px; font-weight:600;}
+
+.section-block{margin:26px 20px 0;}
+.section-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+.section-head h3{font-size:15.5px;}
+.section-head .link{font-size:12.5px; color:var(--purple); font-weight:600;}
+
+.notice-card{background:var(--warning-bg); border:1px solid #F5D9A8; border-radius:14px; padding:12px 14px; display:flex; gap:10px; align-items:flex-start; margin-bottom:10px;}
+.notice-card .dot{font-size:16px;}
+.notice-card .t{font-size:13px; font-weight:600; color:#8A5300;}
+.notice-card .d{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+
+.product-row{display:flex; gap:12px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none;}
+.product-row::-webkit-scrollbar{display:none;}
+.mini-card{flex:0 0 128px; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:10px; box-shadow:var(--shadow-sm);}
+.mini-card .img{width:100%; height:70px; border-radius:10px; background:var(--lavender); display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:8px;}
+.mini-card .n{font-size:12px; font-weight:600; line-height:1.3;}
+.mini-card .b{font-size:10.5px; color:var(--ink-soft); margin-top:2px;}
+.mini-card .badge{margin-top:6px; font-size:9.5px; font-weight:700; color:var(--success); display:flex; align-items:center; gap:3px;}
+
+/* ---------- Bottom nav ---------- */
+.bottom-nav{
+  position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px;
+  background:var(--surface); border-top:1px solid var(--border); display:flex; justify-content:space-around;
+  padding:10px 6px calc(10px + env(safe-area-inset-bottom)); z-index:50;
+}
+.nav-item{display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--ink-soft); font-size:10px; font-weight:600; padding:4px 8px; border-radius:10px;}
+.nav-item .ni{font-size:19px;}
+.nav-item.active{color:var(--purple);}
+.nav-item.scan-item{position:relative; top:-14px;}
+.nav-item.scan-item .ni{width:50px; height:50px; border-radius:50%; background:var(--purple); color:#fff; display:flex; align-items:center; justify-content:center; font-size:20px; box-shadow:0 6px 14px rgba(106,13,173,0.4);}
+
+/* ---------- Cards / generic ---------- */
+.card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow-sm); margin:16px 20px;}
+.btn{padding:14px 18px; border-radius:14px; font-family:var(--font-display); font-weight:600; font-size:14.5px; text-align:center; display:flex; align-items:center; justify-content:center; gap:8px;}
+.btn-primary{background:var(--purple); color:#fff; box-shadow:0 6px 16px rgba(106,13,173,0.28);}
+.btn-primary:active{transform:scale(.97);}
+.btn-outline{background:transparent; border:1.5px solid var(--purple); color:var(--purple);}
+.btn-ghost{background:var(--lavender); color:var(--purple);}
+.btn-danger{background:var(--error); color:#fff;}
+.btn-block{width:100%;}
+.field{margin-bottom:14px;}
+.field label{display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:6px;}
+.field input, .field select, .field textarea{
+  width:100%; padding:12px 14px; border-radius:12px; border:1.5px solid var(--border); background:var(--bg); color:var(--ink); font-size:14px; font-family:var(--font-body);
+}
+.field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--purple); border-color:var(--purple);}
+.page-title{padding:18px 20px 4px;}
+.page-title h2{font-size:19px;}
+.page-title p{font-size:12.5px; color:var(--ink-soft); margin-top:4px;}
+
+/* ---------- Scan screen ---------- */
+.scan-viewport{margin:16px 20px; border-radius:24px; overflow:hidden; background:#000; position:relative; aspect-ratio:3/4; display:flex; align-items:center; justify-content:center;}
+#video{width:100%; height:100%; object-fit:cover;}
+.scan-frame{position:absolute; inset:15%; border:3px solid rgba(255,255,255,0.85); border-radius:20px; box-shadow:0 0 0 999px rgba(0,0,0,0.35);}
+.scan-line{position:absolute; left:15%; right:15%; top:15%; height:2px; background:linear-gradient(90deg, transparent, #A76BE0, transparent); animation:scanMove 2.2s linear infinite;}
+@keyframes scanMove{0%{top:15%;} 100%{top:83%;}}
+.scan-hint{position:absolute; bottom:14px; left:0; right:0; text-align:center; color:#fff; font-size:12.5px;}
+.demo-codes{margin:0 20px; display:flex; gap:8px; flex-wrap:wrap;}
+.demo-chip{padding:8px 12px; border-radius:20px; background:var(--lavender); color:var(--purple); font-size:12px; font-weight:600;}
+.upload-block{margin:14px 20px 0;}
+
+/* ---------- Upload Drop Zone ---------- */
+.upload-zone{
+  margin:14px 20px 0; border:2px dashed var(--purple); border-radius:20px;
+  background:var(--lavender); padding:0; overflow:hidden;
+  transition:border-color .2s, background .2s; cursor:pointer; position:relative;
+}
+.upload-zone.drag-over{ border-color:var(--purple-deep); background:var(--lavender-2); }
+.upload-zone-inner{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:8px; padding:26px 20px; pointer-events:none;
+}
+.upload-zone-icon{ font-size:36px; animation:floatIcon 2.8s ease-in-out infinite; }
+@keyframes floatIcon{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);} }
+.upload-zone-title{ font-size:14px; font-weight:700; color:var(--purple); }
+.upload-zone-sub{ font-size:12px; color:var(--ink-soft); }
+.upload-zone-formats{ font-size:10.5px; color:var(--ink-soft); margin-top:2px; }
+
+/* Preview inside upload zone */
+.upload-preview-wrap{
+  position:relative; width:100%; background:#000;
+  display:none; aspect-ratio:4/3; border-radius:18px; overflow:hidden;
+}
+.upload-preview-wrap.active{ display:block; }
+.upload-preview-img{ width:100%; height:100%; object-fit:contain; display:block; }
+.upload-scan-line{
+  position:absolute; left:0; right:0; top:0; height:3px;
+  background:linear-gradient(90deg, transparent, #A76BE0 40%, #fff 50%, #A76BE0 60%, transparent);
+  animation:uploadScanMove 1.6s linear infinite;
+  display:none;
+}
+.upload-preview-wrap.scanning .upload-scan-line{ display:block; }
+@keyframes uploadScanMove{ 0%{top:0%;} 100%{top:100%;} }
+.upload-overlay-badge{
+  position:absolute; bottom:12px; left:50%; transform:translateX(-50%);
+  background:rgba(20,10,35,0.75); color:#fff; font-size:12px; font-weight:600;
+  padding:6px 16px; border-radius:30px; backdrop-filter:blur(6px);
+  display:none; white-space:nowrap;
+}
+.upload-preview-wrap.active .upload-overlay-badge{ display:block; }
+.upload-result-badge{
+  position:absolute; bottom:12px; left:50%; transform:translateX(-50%);
+  font-size:12px; font-weight:700; padding:7px 18px; border-radius:30px;
+  backdrop-filter:blur(6px); display:none; white-space:nowrap; z-index:5;
+}
+.upload-result-badge.success{ background:rgba(30,158,90,0.9); color:#fff; }
+.upload-result-badge.fail{ background:rgba(214,41,62,0.85); color:#fff; }
+.upload-preview-wrap.show-result .upload-result-badge{ display:block; }
+.upload-preview-wrap.show-result .upload-overlay-badge{ display:none; }
+
+.upload-change-btn{
+  display:block; width:100%; padding:11px; border-radius:14px;
+  background:var(--purple); color:#fff; font-size:13px; font-weight:700;
+  font-family:var(--font-display); text-align:center; margin-top:10px;
+  border:none; cursor:pointer; transition:opacity .2s;
+}
+.upload-change-btn:active{ opacity:.8; }
+
+/* ---------- Loading ---------- */
+.loading-overlay{position:fixed; inset:0; background:rgba(20,10,35,0.55); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; z-index:800;}
+.loading-box{background:var(--surface); padding:28px 32px; border-radius:20px; display:flex; flex-direction:column; align-items:center; gap:14px; box-shadow:var(--shadow);}
+.spinner{width:42px; height:42px; border:4px solid var(--lavender-2); border-top-color:var(--purple); border-radius:50%; animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-box span{font-size:13px; font-weight:600; color:var(--ink-soft);}
+
+/* ---------- Verification screens ---------- */
+.verify-hero{padding:40px 20px 24px; text-align:center;}
+.verify-hero.genuine{background:linear-gradient(180deg, var(--success-bg), transparent);}
+.verify-hero.fake{background:linear-gradient(180deg, var(--error-bg), transparent);}
+.badge-circle{width:96px; height:96px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:44px; color:#fff; animation:popIn .5s cubic-bezier(.34,1.56,.64,1);}
+@keyframes popIn{0%{transform:scale(0);} 80%{transform:scale(1.1);} 100%{transform:scale(1);}}
+.badge-circle.genuine{background:var(--success); box-shadow:0 10px 26px rgba(30,158,90,0.35);}
+.badge-circle.fake{background:var(--error); animation:shakeIn .55s ease; box-shadow:0 10px 26px rgba(214,41,62,0.35);}
+@keyframes shakeIn{0%{transform:scale(0);} 40%{transform:scale(1.08) rotate(-4deg);} 60%{transform:rotate(4deg);} 100%{transform:scale(1) rotate(0);}}
+.verify-status{font-family:var(--font-display); font-size:20px; font-weight:700; margin-top:16px;}
+.verify-status.genuine{color:var(--success);}
+.verify-status.fake{color:var(--error);}
+.verify-sub{font-size:13px; color:var(--ink-soft); margin-top:4px;}
+
+.detail-row{display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px; gap:12px;}
+.detail-row:last-child{border-bottom:none;}
+.detail-row .k{color:var(--ink-soft); flex:0 0 42%;}
+.detail-row .v{font-weight:600; text-align:right; flex:1;}
+.seal{display:flex; align-items:center; gap:10px; padding:14px; background:var(--lavender); border-radius:14px; margin-top:6px;}
+.seal .se{font-size:26px;}
+.seal .st{font-size:11.5px; color:var(--purple); font-weight:700; line-height:1.4;}
+
+.action-row{display:flex; gap:10px; margin:16px 20px;}
+.action-row .btn{flex:1;}
+
+/* ---------- Admin / dashboard ---------- */
+.stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 20px;}
+.stat-card{background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow:var(--shadow-sm);}
+.stat-card .num{font-family:var(--font-display); font-size:24px; font-weight:700; color:var(--purple);}
+.stat-card .lbl{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+.gov-login-card{margin:26px 20px; padding:26px 22px; border-radius:22px; background:linear-gradient(135deg, var(--purple-deep), var(--purple)); color:#fff;}
+.gov-login-card h3{font-size:17px;}
+.gov-login-card p{font-size:12.5px; opacity:.85; margin-top:4px;}
+.gov-login-card .field label{color:rgba(255,255,255,0.8);}
+.gov-login-card .field input{background:rgba(255,255,255,0.12); border-color:rgba(255,255,255,0.25); color:#fff;}
+.gov-login-card .field input::placeholder{color:rgba(255,255,255,0.5);}
+
+.list-row{display:flex; align-items:center; gap:12px; padding:12px; border-radius:14px; background:var(--surface); border:1px solid var(--border); margin-bottom:10px; box-shadow:var(--shadow-sm);}
+.list-row .ic{width:42px; height:42px; border-radius:12px; background:var(--lavender); display:flex; align-items:center; justify-content:center; font-size:19px; flex-shrink:0;}
+.list-row .body{flex:1; min-width:0;}
+.list-row .t1{font-size:13.5px; font-weight:600;}
+.list-row .t2{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+.pill{font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px;}
+.pill.approved{background:var(--success-bg); color:var(--success);}
+.pill.pending{background:var(--warning-bg); color:var(--warning);}
+.pill.rejected{background:var(--error-bg); color:var(--error);}
+
+.tabs{display:flex; gap:8px; margin:14px 20px 4px; overflow-x:auto;}
+.tab{padding:8px 16px; border-radius:20px; background:var(--lavender); color:var(--purple); font-size:12.5px; font-weight:600; white-space:nowrap;}
+.tab.active{background:var(--purple); color:#fff;}
+
+.qr-preview{background:#fff; padding:16px; border-radius:16px; display:flex; align-items:center; justify-content:center; margin:14px 0;}
+
+.settings-row{display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--border);}
+.settings-row:last-child{border-bottom:none;}
+.settings-row .t{font-size:13.5px; font-weight:600;}
+.settings-row .s{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+.toggle{width:44px; height:26px; border-radius:20px; background:var(--border); position:relative; transition:.25s;}
+.toggle.on{background:var(--purple);}
+.toggle .knob{position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:.25s; box-shadow:0 1px 3px rgba(0,0,0,0.3);}
+.toggle.on .knob{left:21px;}
+
+.empty-state{text-align:center; padding:50px 30px; color:var(--ink-soft);}
+.empty-state .ei{font-size:38px; margin-bottom:12px;}
+
+.toast{position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--bg); padding:12px 20px; border-radius:30px; font-size:13px; font-weight:600; opacity:0; transition:.3s; z-index:900; max-width:88%; text-align:center;}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+.back-row{display:flex; align-items:center; gap:12px; padding:18px 20px 6px;}
+.back-row .icon-btn{background:var(--lavender);}
+.back-row h2{font-size:17px;}
+
+.search-box{margin:14px 20px 0; position:relative;}
+.search-box input{width:100%; padding:14px 44px 14px 16px; border-radius:16px; border:1.5px solid var(--border); font-size:14px; background:var(--surface); color:var(--ink);}
+.search-box input:focus{outline:2px solid var(--purple);}
+.search-box .si{position:absolute; right:16px; top:50%; transform:translateY(-50%); color:var(--ink-soft);}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ================= SPLASH ================= -->
+  <div id="splash">
+    <div class="shield-wrap">
+      <div class="shield-glow"></div>
+      <svg class="shield-svg" width="88" height="98" viewBox="0 0 88 98" fill="none">
+        <path d="M44 2 L84 16 V46 C84 72 66 90 44 96 C22 90 4 72 4 46 V16 Z" fill="#fff" opacity="0.98"/>
+        <path d="M44 2 L84 16 V46 C84 72 66 90 44 96 C22 90 4 72 4 46 V16 Z" stroke="#FFD97A" stroke-width="2"/>
+        <path d="M27 48 L39 60 L62 34" stroke="#6A0DAD" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="splash-title display">VERIFY INDIA</div>
+    <div class="splash-sub">Government Product Verification System</div>
+    <div class="splash-progress"><div class="splash-progress-bar"></div></div>
+  </div>
+
+  <!-- ================= HOME ================= -->
+  <section class="screen" id="screen-home">
+    <div class="topbar">
+      <div class="brand">
+        <svg width="30" height="34" viewBox="0 0 88 98" fill="none"><path d="M44 2 L84 16 V46 C84 72 66 90 44 96 C22 90 4 72 4 46 V16 Z" fill="#6A0DAD"/><path d="M27 48 L39 60 L62 34" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="brand-name">VERIFY INDIA</span>
+      </div>
+      <button class="icon-btn" aria-label="Notifications" onclick="showToast('No new notifications')">🔔</button>
+    </div>
+
+    <div class="hero">
+      <h2>Verify any Government<br>Registered Product</h2>
+      <p>Scan the QR code on your product to confirm it's genuine, in seconds.</p>
+      <button class="scan-cta ripple" onclick="go('screen-scan'); createRipple(event)">📷 Scan Product</button>
+    </div>
+
+    <div class="card" style="margin:16px 20px 0;">
+      <div class="field">
+        <label>Check a Product ID in the Database</label>
+        <input type="text" id="homeProductIdInput" placeholder="e.g. VI000001" maxlength="8"
+               oninput="this.value=this.value.toUpperCase()"
+               onkeydown="if(event.key==='Enter') homeLookupProductId();">
+      </div>
+      <button class="btn btn-primary btn-block" onclick="homeLookupProductId()">🔎 Verify Product ID</button>
+      <button class="btn btn-outline btn-block" style="margin-top:10px;" onclick="playCameraDemo()">🎥 Try Camera Demo (no camera needed)</button>
+    </div>
+
+    <div class="quick-grid">
+      <button class="quick-card" onclick="go('screen-search')"><div class="qi">🔍</div><span>Search Product</span></button>
+      <button class="quick-card" onclick="go('screen-history')"><div class="qi">📄</div><span>Scan History</span></button>
+      <button class="quick-card" onclick="go('screen-report')"><div class="qi">🚩</div><span>Report Fake Product</span></button>
+      <button class="quick-card" onclick="go('screen-admin-login')"><div class="qi">🏛️</div><span>Government Login</span></button>
+    </div>
+
+    <div class="section-block">
+      <div class="section-head"><h3>Latest Government Notices</h3></div>
+      <div class="notice-card"><span class="dot">📢</span><div><div class="t">New batch verification drive — FMCG sector</div><div class="d">Regional offices to fast-track pending approvals this week.</div></div></div>
+      <div class="notice-card"><span class="dot">⚠️</span><div><div class="t">Recall alert: Batch #AY-2201 (Ayur Health Oils)</div><div class="d">Consumers advised to check batch numbers before use.</div></div></div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-head"><h3>Recently Verified Products</h3><span class="link" onclick="go('screen-search')">See all</span></div>
+      <div id="recentProductsRow"></div>
+    </div>
+  </section>
+
+  <!-- ================= SCAN ================= -->
+  <section class="screen" id="screen-scan">
+    <div class="page-title"><h2>Scan Product</h2><p>Point your camera at the barcode or QR code on the product, or upload a photo of it.</p></div>
+    <div class="scan-viewport">
+      <video id="video" playsinline muted></video>
+      <div class="scan-frame"></div>
+      <div class="scan-line" id="scanLine"></div>
+      <div class="scan-hint" id="scanHint">Align the barcode within the frame</div>
+    </div>
+    <div style="margin:10px 20px 0;">
+      <button class="btn btn-outline btn-block" onclick="startCamera()">📷 Open / Restart Camera</button>
+    </div>
+
+    <!-- Product ID Lookup -->
+    <div class="card" style="margin:16px 20px 0;">
+      <div class="field">
+        <label>Have the Product ID instead? (e.g. VI000001)</label>
+        <input type="text" id="productIdInput" placeholder="VI000001" maxlength="8"
+               oninput="this.value=this.value.toUpperCase()"
+               onkeydown="if(event.key==='Enter') lookupProductId();">
+      </div>
+      <button class="btn btn-primary btn-block" onclick="lookupProductId()">🔎 Verify by Product ID</button>
+    </div>
+
+    <!-- Upload Drop Zone -->
+    <div class="upload-zone" id="uploadZone"
+         ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)"
+         onclick="document.getElementById('imageUploadInput').click()">
+      <input type="file" id="imageUploadInput" accept="image/*" style="display:none;" onchange="handleImageUpload(event)">
+
+      <!-- Default (no image) state -->
+      <div class="upload-zone-inner" id="uploadZoneDefault">
+        <div class="upload-zone-icon">🖼️</div>
+        <div class="upload-zone-title">Upload Barcode / QR Image</div>
+        <div class="upload-zone-sub">Drag &amp; drop or tap to choose a photo</div>
+        <div class="upload-zone-formats">Supports: JPG · PNG · GIF · WebP · BMP</div>
+      </div>
+
+      <!-- Preview state -->
+      <div class="upload-preview-wrap" id="uploadPreviewWrap">
+        <img class="upload-preview-img" id="uploadPreviewImg" src="" alt="Uploaded barcode">
+        <div class="upload-scan-line" id="uploadScanLine"></div>
+        <div class="upload-overlay-badge" id="uploadOverlayBadge">🔍 Reading barcode…</div>
+        <div class="upload-result-badge success" id="uploadResultBadgeOk">✔ Barcode identified!</div>
+        <div class="upload-result-badge fail" id="uploadResultBadgeFail">✗ Could not read — try another image</div>
+      </div>
+    </div>
+    <button class="upload-change-btn" id="uploadChangeBtn" style="display:none; margin:8px 20px 0;" onclick="resetUploadZone()">📂 Choose Another Image</button>
+
+    <div class="page-title" style="padding-top:14px;"><p>No camera access? Try a sample Product ID:</p></div>
+    <div class="demo-codes">
+      <button class="demo-chip" onclick="simulateScan('VI000001')">✅ VI000001</button>
+      <button class="demo-chip" onclick="simulateScan('VI000002')">✅ VI000002</button>
+      <button class="demo-chip" onclick="simulateScan('VI000003')">❌ VI000003</button>
+      <button class="demo-chip" onclick="simulateScan('VI000004')">❌ VI000004</button>
+      <button class="demo-chip" onclick="simulateScan('Random Unknown Code')">❔ Unknown Code</button>
+    </div>
+  </section>
+
+  <!-- ================= SEARCH ================= -->
+  <section class="screen" id="screen-search">
+    <div class="page-title"><h2>Search Products</h2><p>Search by name, brand, batch, registration number, or manufacturer.</p></div>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Try “Ayur” or “AY-2201”…" oninput="renderSearch()">
+      <span class="si">🔍</span>
+    </div>
+    <div id="searchResults" style="margin:16px 20px 0;"></div>
+  </section>
+
+  <!-- ================= HISTORY ================= -->
+  <section class="screen" id="screen-history">
+    <div class="page-title"><h2>Scan History</h2><p>Products you've verified with VERIFY INDIA.</p></div>
+    <div id="historyList" style="margin:16px 20px 0;"></div>
+  </section>
+
+  <!-- ================= REPORT FAKE PRODUCT ================= -->
+  <section class="screen" id="screen-report">
+    <div class="back-row"><button class="icon-btn" onclick="go('screen-home')">←</button><h2>Report Fake Product</h2></div>
+    <div class="card">
+      <div class="field"><label>Your Name</label><input type="text" placeholder="Full name"></div>
+      <div class="field"><label>Email</label><input type="email" placeholder="you@example.com"></div>
+      <div class="field"><label>Phone</label><input type="tel" placeholder="+91"></div>
+      <div class="field"><label>Product Name</label><input type="text" placeholder="e.g. Ayur Health Oil"></div>
+      <div class="field"><label>Brand</label><input type="text" placeholder="Brand name"></div>
+      <div class="field"><label>Store / Location</label><input type="text" placeholder="Where did you buy this?"></div>
+      <div class="field"><label>Comments</label><textarea rows="3" placeholder="Describe what seemed off…"></textarea></div>
+      <button class="btn btn-primary btn-block" onclick="submitReport()">Submit Report</button>
+    </div>
+  </section>
+
+  <!-- ================= VERIFICATION: GENUINE ================= -->
+  <section class="screen" id="screen-verified">
+    <div class="verify-hero genuine">
+      <div class="badge-circle genuine">✔</div>
+      <div class="verify-status genuine">VERIFIED — GENUINE PRODUCT</div>
+      <div class="verify-sub" id="verifiedProductName">—</div>
+    </div>
+    <div class="card" id="verifiedDetails"></div>
+    <div class="seal" style="margin:16px 20px;">
+      <div class="se">🏛️</div>
+      <div class="st">This product has been verified against the Government Product Registry.<br>Verified electronically — no signature required.</div>
+    </div>
+    <div class="action-row">
+      <button class="btn btn-outline" onclick="showToast('Certificate downloaded (demo)')">⬇ Certificate</button>
+      <button class="btn btn-outline" onclick="showToast('Share sheet opened (demo)')">↗ Share</button>
+    </div>
+    <div class="action-row"><button class="btn btn-primary btn-block" onclick="go('screen-scan')">Scan Another Product</button></div>
+  </section>
+
+  <!-- ================= VERIFICATION: FAKE ================= -->
+  <section class="screen" id="screen-fake">
+    <div class="verify-hero fake">
+      <div class="badge-circle fake">✕</div>
+      <div class="verify-status fake">PRODUCT NOT FOUND</div>
+      <div class="verify-sub">Possible Counterfeit Product</div>
+    </div>
+    <div class="card">
+      <p style="font-size:13px; color:var(--ink-soft); line-height:1.6;">This QR code does not exist in the Government Database. Do not consume or use this product. Please report it and avoid purchasing from this seller again.</p>
+    </div>
+    <div class="action-row"><button class="btn btn-danger btn-block" onclick="go('screen-report')">🚩 Report This Product</button></div>
+    <div class="action-row">
+      <button class="btn btn-outline" onclick="go('screen-scan')">Scan Again</button>
+      <button class="btn btn-outline" onclick="showToast('Support: 1800-11-4000 (demo)')">Contact Support</button>
+    </div>
+    <div class="action-row"><button class="btn btn-ghost btn-block" onclick="showToast('Locating nearest consumer office…')">📍 Locate Nearest Consumer Office</button></div>
+  </section>
+
+  <!-- ================= PROFILE ================= -->
+  <section class="screen" id="screen-profile">
+    <div class="page-title"><h2>Profile</h2></div>
+    <div class="card" style="display:flex; align-items:center; gap:14px;">
+      <div style="width:56px; height:56px; border-radius:50%; background:var(--lavender); display:flex; align-items:center; justify-content:center; font-size:24px;">👤</div>
+      <div>
+        <div style="font-weight:700; font-size:15px;">Guest User</div>
+        <div style="font-size:12px; color:var(--ink-soft);">guest@verifyindia.gov.in · Public User</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="settings-row"><div><div class="t">Verification History</div><div class="s" id="profileScanCount">0 scans</div></div><span>→</span></div>
+      <div class="settings-row" onclick="showToast('No reports submitted yet')" style="cursor:pointer;"><div><div class="t">Reports Submitted</div><div class="s">0 reports</div></div><span>→</span></div>
+      <div class="settings-row" onclick="go('screen-settings')" style="cursor:pointer;"><div><div class="t">Settings</div></div><span>→</span></div>
+      <div class="settings-row" onclick="go('screen-admin-login')" style="cursor:pointer;"><div><div class="t">Government Admin Login</div><div class="s">Officers &amp; department staff</div></div><span>→</span></div>
+    </div>
+    <div class="card"><button class="btn btn-outline btn-block" onclick="showToast('Logged out (demo)')">Log Out</button></div>
+  </section>
+
+  <!-- ================= SETTINGS ================= -->
+  <section class="screen" id="screen-settings">
+    <div class="back-row"><button class="icon-btn" onclick="go('screen-profile')">←</button><h2>Settings</h2></div>
+    <div class="card">
+      <div class="settings-row"><div><div class="t">Dark Mode</div><div class="s">Easier on the eyes at night</div></div><div class="toggle" id="darkToggle" onclick="toggleDark()"><div class="knob"></div></div></div>
+      <div class="settings-row">
+  <div>
+    <div class="t">Language</div>
+    <div class="s" id="languageCurrent">English</div>
+  </div>
+
+  <div style="display:flex;gap:6px;">
+    <button
+      onclick="setLanguage('en')"
+      style="padding:7px 10px;border-radius:10px;background:var(--lavender);color:var(--purple);font-weight:700;">
+      EN
+    </button>
+
+    <button
+      onclick="setLanguage('hi')"
+      style="padding:7px 10px;border-radius:10px;background:var(--lavender);color:var(--purple);font-weight:700;">
+      हिंदी
+    </button>
+  </div>
+</div>
+      <div class="settings-row"><div><div class="t">Notification Preferences</div></div><span>→</span></div>
+      <div class="settings-row"><div><div class="t">Privacy Policy</div></div><span>→</span></div>
+      <div class="settings-row"><div><div class="t">Terms &amp; Conditions</div></div><span>→</span></div>
+      <div class="settings-row"><div><div class="t">About VERIFY INDIA</div></div><span>→</span></div>
+      <div class="settings-row"><div><div class="t">Contact Support</div></div><span>→</span></div>
+    </div>
+  </section>
+
+  <!-- ================= ADMIN LOGIN ================= -->
+  <section class="screen" id="screen-admin-login">
+    <div class="back-row"><button class="icon-btn" onclick="go('screen-home')">←</button><h2>Government Admin</h2></div>
+    <div class="gov-login-card">
+      <h3>Officer Login</h3>
+      <p>Authorized personnel only. This session is logged and monitored.</p>
+      <div class="field" style="margin-top:16px;"><label>Government ID</label><input type="text" id="adminId" placeholder="e.g. GOV-2024-00114"></div>
+      <div class="field"><label>Password</label><input type="password" id="adminPass" placeholder="••••••••"></div>
+      <button class="btn btn-block" style="background:#fff; color:var(--purple);" onclick="adminLogin()">Login Securely</button>
+    </div>
+  </section>
+
+  <!-- ================= ADMIN DASHBOARD ================= -->
+  <section class="screen" id="screen-admin-dash">
+    <div class="topbar">
+      <div class="brand"><span class="brand-name">Officer Dashboard</span></div>
+      <button class="icon-btn" onclick="go('screen-home')" aria-label="Exit admin">✕</button>
+    </div>
+    <div class="page-title" style="padding-top:0;"><p>Welcome back, <b id="adminNameLbl">Officer</b>. Here's today's overview.</p></div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="num" id="statTotal">0</div><div class="lbl">Total Registered Products</div></div>
+      <div class="stat-card"><div class="num" id="statToday">0</div><div class="lbl">Today's Scans</div></div>
+      <div class="stat-card"><div class="num" id="statReports">0</div><div class="lbl">Fake Product Reports</div></div>
+      <div class="stat-card"><div class="num" id="statPending">0</div><div class="lbl">Pending Verifications</div></div>
+      <div class="stat-card"><div class="num" id="statApproved">0</div><div class="lbl">Approved Products</div></div>
+      <div class="stat-card"><div class="num" id="statExpired">0</div><div class="lbl">Expired Products</div></div>
+    </div>
+    <div class="quick-grid">
+      <button class="quick-card" onclick="go('screen-add-product')"><div class="qi">➕</div><span>Add Product</span></button>
+      <button class="quick-card" onclick="openApprovalPage()"><div class="qi">✅</div><span>Approve Products</span></button>
+      <button class="quick-card" onclick="openQRGenerator()"><div class="qi">📱</div><span>Generate QR</span></button>
+      <button class="quick-card" onclick="exportProductData()">Export Data</button>
+    </div>
+    <div class="section-block">
+      <div class="section-head"><h3>Recent Activity</h3></div>
+      <div id="activityList"></div>
+    </div>
+  </section>
+
+  <!-- ================= ADMIN: MANAGE PRODUCTS ================= -->
+  <section class="screen" id="screen-admin-products">
+    <div class="back-row"><button class="icon-btn" onclick="go('screen-admin-dash')">←</button><h2>Manage Products</h2></div>
+    <div class="tabs">
+      <span class="tab active" data-f="all" onclick="filterAdmin('all',this)">All</span>
+      <span class="tab" data-f="pending_verification" onclick="filterAdmin('pending_verification',this)">Pending</span>
+      <span class="tab" data-f="approved" onclick="filterAdmin('approved',this)">Approved</span>
+      <span class="tab" data-f="fake" onclick="filterAdmin('fake',this)">Fake Barcodes</span>
+    </div>
+    <div id="adminProductList" style="margin:14px 20px 0;"></div>
+  </section>
+
+  <!-- ================= ADMIN: ADD PRODUCT ================= -->
+  <section class="screen" id="screen-add-product">
+    <div class="back-row"><button class="icon-btn" onclick="go('screen-admin-dash')">←</button><h2>Register Product</h2></div>
+    <div class="card">
+      <div class="field"><label>Product Name</label><input type="text" id="f-name" placeholder="e.g. Himalaya Herbal Toothpaste"></div>
+      <div class="field"><label>Brand</label><input type="text" id="f-brand" placeholder="e.g. Himalaya"></div>
+      <div class="field"><label>Category</label><input type="text" id="f-category" placeholder="e.g. Personal Care"></div>
+      <div class="field"><label>Manufacturer</label><input type="text" id="f-manufacturer" placeholder="Legal manufacturer name"></div>
+      <div class="field"><label>License Number</label><input type="text" id="f-license" placeholder="Manufacturer license no."></div>
+      <div class="field"><label>Factory Address</label><input type="text" id="f-address" placeholder="Full factory address"></div>
+      <div class="field"><label>Batch Number</label><input type="text" id="f-batch" placeholder="e.g. HB-4471"></div>
+      <div class="field"><label>Manufacturing Date</label><input type="date" id="f-mfgdate"></div>
+      <div class="field"><label>Expiry Date</label><input type="date" id="f-expdate"></div>
+      <div class="field"><label>Product Description</label><textarea id="f-desc" rows="3" placeholder="Short description"></textarea></div>
+      <div class="field"><label>Upload Product Image</label><input type="file" id="f-image" accept="image/*"></div>
+      <button class="btn btn-primary btn-block" onclick="submitProduct()">Generate QR &amp; Submit for Verification</button>
+    </div>
+  </section>
+
+  <!-- ================= ADMIN: PRODUCT QR RESULT ================= -->
+  <section class="screen" id="screen-qr-result">
+    <div class="back-row"><button class="icon-btn" onclick="go('screen-admin-dash')">←</button><h2>Product Registered</h2></div>
+    <div class="card" style="text-align:center;">
+      <div class="badge-circle genuine" style="margin-bottom:6px;">✔</div>
+      <h3 style="margin-top:10px;" id="qrResultName">Product Name</h3>
+      <p style="font-size:12.5px; color:var(--ink-soft); margin-top:4px;">Status: Pending Verification · Awaiting Regional Head approval</p>
+      <div class="qr-preview" id="qrCanvasWrap"></div>
+      <p style="font-size:11.5px; color:var(--ink-soft);">Attach this QR code to the physical product packaging.</p>
+    </div>
+    <div class="action-row"><button class="btn btn-primary btn-block" onclick="go('screen-admin-dash')">Back to Dashboard</button></div>
+  </section>
+
+  <!-- ================= BOTTOM NAV ================= -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="nav-item active" data-target="screen-home" onclick="navTap('screen-home',this)"><span class="ni">🏠</span>Home</button>
+    <button class="nav-item" data-target="screen-search" onclick="navTap('screen-search',this)"><span class="ni">🔍</span>Search</button>
+    <button class="nav-item scan-item" data-target="screen-scan" onclick="navTap('screen-scan',this)"><span class="ni">📷</span></button>
+    <button class="nav-item" data-target="screen-history" onclick="navTap('screen-history',this)"><span class="ni">🕒</span>History</button>
+    <button class="nav-item" data-target="screen-profile" onclick="navTap('screen-profile',this)"><span class="ni">👤</span>Profile</button>
+  </nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ================= CAMERA DEMO OVERLAY (simulated, no real camera needed) ================= -->
+<div class="loading-overlay" id="cameraDemoOverlay" style="display:none; z-index:900;">
+  <div class="loading-box" style="width:260px; padding:24px 22px;">
+    <div style="position:relative; width:100%; height:170px; border-radius:16px; background:#0d0616; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+      <div style="font-size:40px; opacity:.5;">📷</div>
+      <div class="scan-frame" style="position:absolute; inset:14px; border-radius:12px;"></div>
+      <div id="cameraDemoLine" style="position:absolute; left:6%; right:6%; top:10%; height:2px; background:#fff; box-shadow:0 0 8px #fff; animation:cameraDemoScan 1.6s ease-in-out infinite;"></div>
+    </div>
+    <span id="cameraDemoLabel">Simulating live camera scan…</span>
+  </div>
+</div>
+<style>
+@keyframes cameraDemoScan{0%{top:10%;} 50%{top:85%;} 100%{top:10%;}}
+</style>
+
+<script>
+  /* ===================== LANGUAGE SYSTEM ===================== */
+
+let currentLanguage = localStorage.getItem('verifyIndiaLanguage') || 'en';
+
+const LANG = {
+  en: {
+    homeTitle: 'Verify any Government Registered Product',
+    homeDesc: "Scan the QR code on your product to confirm it's genuine, in seconds.",
+    scanProduct: 'Scan Product',
+    verifyProductId: 'Verify Product ID',
+    searchProduct: 'Search Product',
+    scanHistory: 'Scan History',
+    reportFake: 'Report Fake Product',
+    governmentLogin: 'Government Login',
+    latestNotices: 'Latest Government Notices',
+    recentlyVerified: 'Recently Verified Products',
+    seeAll: 'See all',
+
+    scanTitle: 'Scan Product',
+    scanDesc: 'Point your camera at the barcode or QR code on the product, or upload a photo of it.',
+    openCamera: 'Open / Restart Camera',
+    verifyById: 'Verify by Product ID',
+    uploadBarcode: 'Upload Barcode / QR Image',
+    chooseImage: 'Drag & drop or tap to choose a photo',
+    chooseAnother: 'Choose Another Image',
+
+    searchTitle: 'Search Products',
+    searchDesc: 'Search by name, brand, batch, registration number, or manufacturer.',
+
+    historyTitle: 'Scan History',
+    historyDesc: "Products you've verified with VERIFY INDIA.",
+
+    profileTitle: 'Profile',
+    guestUser: 'Guest User',
+    settings: 'Settings',
+    logout: 'Log Out',
+
+    language: 'Language',
+    darkMode: 'Dark Mode',
+
+    governmentAdmin: 'Government Admin',
+    officerLogin: 'Officer Login',
+    governmentId: 'Government ID',
+    password: 'Password',
+    loginSecurely: 'Login Securely',
+
+    dashboard: 'Officer Dashboard',
+    addProduct: 'Add Product',
+    approveProducts: 'Approve Products',
+    generateQR: 'Generate QR',
+    exportData: 'Export Data',
+
+    genuine: 'Genuine',
+    approved: 'Approved',
+    pending: 'Pending',
+    productNotFound: 'PRODUCT NOT FOUND',
+    verifiedGenuine: 'VERIFIED — GENUINE PRODUCT'
+  },
+
+  hi: {
+    homeTitle: 'किसी भी सरकारी पंजीकृत उत्पाद की जाँच करें',
+    homeDesc: 'उत्पाद पर दिए गए QR कोड को स्कैन करके कुछ ही सेकंड में उसकी प्रामाणिकता जाँचें।',
+    scanProduct: 'उत्पाद स्कैन करें',
+    verifyProductId: 'उत्पाद ID सत्यापित करें',
+    searchProduct: 'उत्पाद खोजें',
+    scanHistory: 'स्कैन इतिहास',
+    reportFake: 'नकली उत्पाद की रिपोर्ट करें',
+    governmentLogin: 'सरकारी लॉगिन',
+    latestNotices: 'नवीनतम सरकारी सूचनाएँ',
+    recentlyVerified: 'हाल ही में सत्यापित उत्पाद',
+    seeAll: 'सभी देखें',
+
+    scanTitle: 'उत्पाद स्कैन करें',
+    scanDesc: 'उत्पाद पर दिए गए बारकोड या QR कोड के सामने कैमरा रखें, या उसकी फोटो अपलोड करें।',
+    openCamera: 'कैमरा खोलें / पुनः शुरू करें',
+    verifyById: 'उत्पाद ID से सत्यापित करें',
+    uploadBarcode: 'बारकोड / QR की फोटो अपलोड करें',
+    chooseImage: 'फोटो चुनने के लिए ड्रैग करें या टैप करें',
+    chooseAnother: 'दूसरी फोटो चुनें',
+
+    searchTitle: 'उत्पाद खोजें',
+    searchDesc: 'नाम, ब्रांड, बैच, पंजीकरण संख्या या निर्माता द्वारा खोजें।',
+
+    historyTitle: 'स्कैन इतिहास',
+    historyDesc: 'VERIFY INDIA से सत्यापित किए गए उत्पाद।',
+
+    profileTitle: 'प्रोफ़ाइल',
+    guestUser: 'अतिथि उपयोगकर्ता',
+    settings: 'सेटिंग्स',
+    logout: 'लॉग आउट',
+
+    language: 'भाषा',
+    darkMode: 'डार्क मोड',
+
+    governmentAdmin: 'सरकारी प्रशासन',
+    officerLogin: 'अधिकारी लॉगिन',
+    governmentId: 'सरकारी ID',
+    password: 'पासवर्ड',
+    loginSecurely: 'सुरक्षित लॉगिन',
+
+    dashboard: 'अधिकारी डैशबोर्ड',
+    addProduct: 'उत्पाद जोड़ें',
+    approveProducts: 'उत्पाद स्वीकृत करें',
+    generateQR: 'QR बनाएँ',
+    exportData: 'डेटा एक्सपोर्ट करें',
+
+    genuine: 'असली',
+    approved: 'स्वीकृत',
+    pending: 'लंबित',
+    productNotFound: 'उत्पाद नहीं मिला',
+    verifiedGenuine: 'सत्यापित — असली उत्पाद'
+  }
+};
+
+function t(key){
+  return LANG[currentLanguage][key] || key;
+}
+
+function setLanguage(lang){
+  currentLanguage = lang;
+  localStorage.setItem('verifyIndiaLanguage', lang);
+
+  applyLanguage();
+
+  showToast(
+    lang === 'hi'
+      ? 'भाषा हिंदी में बदल दी गई'
+      : 'Language changed to English'
+  );
+}
+/* ===================== MOCK DATABASE ===================== */
+// Genuine test barcodes (from uploaded R_TP_*.gif: Test Product 1,2,6,8,9,10)
+const GENUINE_SPECS = {
+  1:  { name:'Herbal Toothpaste',        brand:'Himalaya',   category:'Personal Care', manufacturer:'Himalaya Wellness Company', license:'MFG-LIC-88213', address:'Makali, Bengaluru, Karnataka', icon:'🧴' },
+  2:  { name:'Pure Cow Ghee',             brand:'Amul',       category:'Food & Dairy',  manufacturer:'Gujarat Cooperative Milk Marketing Federation', license:'MFG-LIC-55021', address:'Anand, Gujarat', icon:'🧈' },
+  6:  { name:'Multivitamin Tablets',      brand:'Zenith Labs',category:'Pharma',        manufacturer:'Zenith Pharmaceuticals Ltd.', license:'MFG-LIC-71190', address:'Baddi, Himachal Pradesh', icon:'💊' },
+  8:  { name:'Basmati Rice 5kg',          brand:'India Gate', category:'Food & Grocery',manufacturer:'KRBL Limited', license:'MFG-LIC-40021', address:'Ghaziabad, Uttar Pradesh', icon:'🌾' },
+  9:  { name:'Antiseptic Liquid 500ml',   brand:'Dettol',     category:'Health & Hygiene', manufacturer:'Reckitt Benckiser (India) Pvt. Ltd.', license:'MFG-LIC-60312', address:'Gurugram, Haryana', icon:'🧴' },
+  10: { name:'LPG-Safe Cooking Oil 1L',   brand:'Fortune',    category:'Food & Grocery',manufacturer:'Adani Wilmar Ltd.', license:'MFG-LIC-90045', address:'Mundra, Gujarat', icon:'🛢️' }
+};
+// Barcodes flagged as known-counterfeit at registration time (from uploaded F_TP_*.gif: Test Product 3,4,5,7)
+const KNOWN_FAKE_NUMBERS = [3, 4, 5, 7];
+const GENUINE_NUMBERS = [1, 2, 6, 8, 9, 10];
+
+function toProductId(n){
+  // Government-style product ID, e.g. VI000001
+  return 'VI' + String(n).padStart(6,'0');
+}
+function codeVariants(n){
+  // Accept multiple plausible decodings of the same physical barcode, plus its official Product ID
+  return [`Test Product ${n}`, `TEST PRODUCT ${n}`, `TestProduct${n}`, `${n}`, toProductId(n)];
+}
+function normCode(s){ return (s||'').toString().trim().toLowerCase().replace(/\s+/g,''); }
+
+let PRODUCTS = GENUINE_NUMBERS.map(n=>{
+  const s = GENUINE_SPECS[n];
+  return {
+    id:'p'+n, productId: toProductId(n), qr:`Test Product ${n}`, codes: codeVariants(n),
+    name:s.name, brand:s.brand, category:s.category,
+    manufacturer:s.manufacturer, license:s.license, address:s.address,
+    batch:'BT-'+(1000+n*37), mfgDate:'2025-0'+((n%9)+1)+'-10', expDate:'2027-0'+((n%9)+1)+'-09',
+    regNo:'REG-IN-'+(100000+n*911), govApproval:'GOI-APR-'+(200000+n*733),
+    desc:`Government-registered ${s.name.toLowerCase()}.`, specs:'Standard retail pack',
+    icon:s.icon, status:'approved', verificationStatus:'verified', verifiedBy:'Officer R. Sharma',
+    regDate:'2025-01-1'+(n%9), verifiedDate:'2025-01-2'+(n%9), img:null
+  };
+});
+
+// Known-fake registry: pre-seeded with 3,4,5,7, and grows automatically whenever an
+// unrecognized barcode is scanned (per requirement: unknown codes are flagged fake and stored).
+let FAKE_DB = KNOWN_FAKE_NUMBERS.map(n=>({
+  code:`Test Product ${n}`, productId: toProductId(n), codes: codeVariants(n),
+  reason:'Registered as counterfeit sample', flaggedAt:'2025-01-05', source:'seed'
+}));
+
+function findGenuine(raw){
+  const n = normCode(raw);
+  return PRODUCTS.find(p => p.codes.some(c => normCode(c)===n));
+}
+function findKnownFake(raw){
+  const n = normCode(raw);
+  return FAKE_DB.find(f => f.codes.some(c => normCode(c)===n));
+}
+function flagAsFake(raw){
+  const entry = { code: raw, codes:[raw], reason:'Not found in Government Registry — auto-flagged', flaggedAt:new Date().toLocaleDateString('en-IN'), source:'auto' };
+  FAKE_DB.push(entry);
+  return entry;
+}
+
+let SCAN_HISTORY = [];
+let RECENT_VERIFIED = [];
+let REPORTS = [];
+let currentAdmin = null;
+let adminFilter = 'all';
+
+/* ===================== NAVIGATION ===================== */
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+  const navMap = {'screen-home':0,'screen-search':1,'screen-scan':2,'screen-history':3,'screen-profile':4};
+  document.querySelectorAll('.nav-item').forEach((n,i)=>n.classList.toggle('active', navMap[id]===i));
+  if(id==='screen-scan') startCamera(); else stopCamera();
+  if(id==='screen-history') renderHistory();
+  if(id==='screen-search') renderSearch();
+  if(id==='screen-admin-dash') renderDashboard();
+  if(id==='screen-admin-products') renderAdminProducts();
+  if(id==='screen-home') renderRecent();
+}
+function navTap(id, el){ go(id); }
+
+/* ===================== SPLASH ===================== */
+window.addEventListener('DOMContentLoaded', ()=>{  applyLanguage();
+  document.documentElement.setAttribute('data-theme', 'dark');
+  const dt = document.getElementById('darkToggle');
+  if(dt) dt.classList.add('on');
+  renderRecent();
+  setTimeout(()=>{
+    document.getElementById('splash').style.transition = 'opacity .5s ease';
+    document.getElementById('splash').style.opacity = '0';
+    setTimeout(()=>{
+      document.getElementById('splash').style.display='none';
+      go('screen-home');
+    }, 500);
+  }, 2400);
+});
+
+/* ===================== TOAST ===================== */
+function applyLanguage(){
+
+  document.documentElement.lang =
+    currentLanguage === 'hi' ? 'hi' : 'en';
+
+  const map = {
+
+    '.hero h2': 'homeTitle',
+    '.hero p': 'homeDesc',
+
+    '#screen-home .scan-cta': 'scanProduct',
+
+    '#screen-home .quick-card:nth-child(1) span': 'searchProduct',
+    '#screen-home .quick-card:nth-child(2) span': 'scanHistory',
+    '#screen-home .quick-card:nth-child(3) span': 'reportFake',
+    '#screen-home .quick-card:nth-child(4) span': 'governmentLogin',
+
+    '#screen-home .section-head h3': 'latestNotices',
+
+    '#screen-scan .page-title h2': 'scanTitle',
+    '#screen-search .page-title h2': 'searchTitle',
+    '#screen-history .page-title h2': 'historyTitle',
+
+    '#screen-profile .page-title h2': 'profileTitle',
+
+    '#screen-settings .back-row h2': 'settings',
+
+    '#screen-admin-login .back-row h2': 'governmentAdmin',
+    '#screen-admin-login h3': 'officerLogin',
+
+    '#screen-admin-dash .brand-name': 'dashboard',
+
+    '#screen-admin-dash .quick-card:nth-child(1) span': 'addProduct',
+    '#screen-admin-dash .quick-card:nth-child(2) span': 'approveProducts',
+    '#screen-admin-dash .quick-card:nth-child(3) span': 'generateQR',
+    '#screen-admin-dash .quick-card:nth-child(4) span': 'exportData'
+  };
+
+  Object.keys(map).forEach(selector => {
+
+    const el = document.querySelector(selector);
+
+    if(el){
+      el.textContent = t(map[selector]);
+    }
+
+  });
+
+  /* Profile */
+
+  const profileName =
+    document.querySelector('#screen-profile .card div div[style*="font-weight:700"]');
+
+  if(profileName){
+    profileName.textContent = t('guestUser');
+  }
+
+  /* Logout */
+
+  const logoutBtn =
+    document.querySelector('#screen-profile .card:last-child button');
+
+  if(logoutBtn){
+    logoutBtn.textContent = t('logout');
+  }
+
+  /* Language setting subtitle */
+
+  const languageRows =
+    document.querySelectorAll('#screen-settings .settings-row');
+
+  languageRows.forEach(row => {
+
+    const title = row.querySelector('.t');
+
+    if(title && title.textContent.trim() === 'Language'){
+      const sub = row.querySelector('.s');
+
+      if(sub){
+        sub.textContent =
+          currentLanguage === 'hi' ? 'हिंदी' : 'English';
+      }
+    }
+
+  });
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ===================== RIPPLE ===================== */
+function createRipple(e){
+  const btn = e.currentTarget;
+  const circle = document.createElement('span');
+  const d = Math.max(btn.clientWidth, btn.clientHeight);
+  circle.style.width = circle.style.height = d+'px';
+  circle.style.left = (e.clientX - btn.getBoundingClientRect().left - d/2)+'px';
+  circle.style.top = (e.clientY - btn.getBoundingClientRect().top - d/2)+'px';
+  circle.className = 'ripple-el';
+  btn.appendChild(circle);
+  setTimeout(()=>circle.remove(), 650);
+}
+
+/* ===================== HOME: RECENT PRODUCTS ===================== */
+function renderRecent(){
+  const row = document.getElementById('recentProductsRow');
+  if(RECENT_VERIFIED.length===0){
+    row.className = '';
+    row.innerHTML = `
+      <button class="quick-card" onclick="go('screen-scan')" style="width:100%; flex-direction:row; align-items:center; gap:12px;">
+        <div class="qi">📷</div>
+        <span>Nothing verified yet — tap to Scan Product</span>
+      </button>`;
+    return;
+  }
+  row.className = 'product-row';
+  row.innerHTML = RECENT_VERIFIED.map(p=>`
+    <div class="mini-card">
+      <div class="img">${p.icon}</div>
+      <div class="n">${p.name}</div>
+      <div class="b">${p.brand}</div>
+      <div class="badge">✔ Verified</div>
+    </div>`).join('');
+}
+
+/* ===================== SEARCH ===================== */
+function renderSearch(){
+  const q = (document.getElementById('searchInput').value||'').toLowerCase().trim();
+  const results = document.getElementById('searchResults');
+  let list = PRODUCTS;
+  let fakeMatches = [];
+  if(q){
+    list = PRODUCTS.filter(p =>
+      p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q) ||
+      p.batch.toLowerCase().includes(q) || p.regNo.toLowerCase().includes(q) ||
+      p.manufacturer.toLowerCase().includes(q) || p.qr.toLowerCase().includes(q) ||
+      (p.productId||'').toLowerCase().includes(q)
+    );
+    fakeMatches = FAKE_DB.filter(f => f.code.toLowerCase().includes(q) || (f.productId||'').toLowerCase().includes(q));
+  }
+  if(list.length===0 && fakeMatches.length===0){
+    results.innerHTML = `<div class="empty-state"><div class="ei">🔍</div>No matching products found.</div>`;
+    return;
+  }
+  const genuineHtml = list.map(p=>`
+    <div class="list-row" onclick="openVerification('${p.qr}', true)" style="cursor:pointer;">
+      <div class="ic">${p.icon}</div>
+      <div class="body">
+        <div class="t1">${p.name}</div>
+        <div class="t2">${p.productId} · ${p.brand} · Batch ${p.batch}</div>
+      </div>
+      <span class="pill approved">Genuine</span>
+    </div>`).join('');
+  const fakeHtml = fakeMatches.map(f=>`
+    <div class="list-row" onclick="openVerification('${f.code}', true)" style="cursor:pointer;">
+      <div class="ic">🚫</div>
+      <div class="body">
+        <div class="t1">${f.code}</div>
+        <div class="t2">${f.reason}</div>
+      </div>
+      <span class="pill rejected">Fake</span>
+    </div>`).join('');
+  results.innerHTML = genuineHtml + fakeHtml;
+}
+
+/* ===================== CAMERA / BARCODE SCANNING (ZXing: QR + Code128/39/EAN etc.) ===================== */
+let stream=null, zxingReader=null, zxingActive=false;
+
+async function startCamera(){
+  const hint = document.getElementById('scanHint');
+  if(!window.ZXing){
+    hint.textContent = 'Scanner library unavailable — use upload or a demo code below';
+    return;
+  }
+  try{
+    stopCamera();
+    zxingReader = new ZXing.BrowserMultiFormatReader();
+    zxingActive = true;
+    hint.textContent = 'Align the barcode within the frame';
+    await zxingReader.decodeFromVideoDevice(null, 'video', (result, err) => {
+      if(result && zxingActive){
+        zxingActive = false;
+        const code = result.getText().trim();
+        stopCamera();
+        openVerification(code, false);
+      }
+    });
+  }catch(e){
+    hint.textContent = 'Camera unavailable — use upload or a demo code below';
+  }
+}
+
+function stopCamera(){
+  zxingActive = false;
+  try{ if(zxingReader) zxingReader.reset(); }catch(e){}
+  const video = document.getElementById('video');
+  if(video && video.srcObject){ video.srcObject.getTracks().forEach(t=>t.stop()); video.srcObject=null; }
+  stream = null;
+}
+
+/* ===================== IMAGE UPLOAD SCANNING ===================== */
+
+// --- Drag & Drop helpers ---
+function handleDragOver(e){
+  e.preventDefault(); e.stopPropagation();
+  document.getElementById('uploadZone').classList.add('drag-over');
+}
+function handleDragLeave(e){
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag-over');
+}
+function handleDrop(e){
+  e.preventDefault(); e.stopPropagation();
+  document.getElementById('uploadZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if(file && file.type.startsWith('image/')) processUploadedFile(file);
+  else showToast('Please drop an image file');
+}
+function handleImageUpload(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  processUploadedFile(file);
+  event.target.value = '';
+}
+function resetUploadZone(){
+  document.getElementById('uploadZoneDefault').style.display = '';
+  const wrap = document.getElementById('uploadPreviewWrap');
+  wrap.classList.remove('active','scanning','show-result');
+  document.getElementById('uploadResultBadgeOk').style.display = 'none';
+  document.getElementById('uploadResultBadgeFail').style.display = 'none';
+  document.getElementById('uploadChangeBtn').style.display = 'none';
+  document.getElementById('imageUploadInput').value = '';
+}
+
+function processUploadedFile(file){
+  const url = URL.createObjectURL(file);
+  // Show preview
+  const previewImg = document.getElementById('uploadPreviewImg');
+  const previewWrap = document.getElementById('uploadPreviewWrap');
+  const defaultView = document.getElementById('uploadZoneDefault');
+  const changeBtn = document.getElementById('uploadChangeBtn');
+  const overlayBadge = document.getElementById('uploadOverlayBadge');
+
+  previewImg.src = url;
+  defaultView.style.display = 'none';
+  previewWrap.classList.add('active', 'scanning');
+  previewWrap.classList.remove('show-result');
+  overlayBadge.textContent = '🔍 Reading barcode…';
+  changeBtn.style.display = 'none';
+
+  // Multi-engine scan chain
+  scanImageMultiEngine(url, file)
+    .then(code => {
+      // Success
+      previewWrap.classList.remove('scanning');
+      previewWrap.classList.add('show-result');
+      document.getElementById('uploadResultBadgeOk').style.display = 'block';
+      document.getElementById('uploadResultBadgeFail').style.display = 'none';
+      changeBtn.style.display = 'block';
+      URL.revokeObjectURL(url);
+      // Small delay so user sees the success badge, then navigate
+      setTimeout(() => openVerification(code, false), 800);
+    })
+    .catch(() => {
+      previewWrap.classList.remove('scanning');
+      previewWrap.classList.add('show-result');
+      document.getElementById('uploadResultBadgeFail').style.display = 'block';
+      document.getElementById('uploadResultBadgeOk').style.display = 'none';
+      changeBtn.style.display = 'block';
+      URL.revokeObjectURL(url);
+      showToast('Could not read a barcode — try a clearer, closer photo');
+    });
+}
+
+/* Multi-engine scanner:
+   1. ZXing  (QR + Code128/39/EAN etc.)
+   2. jsQR  (QR via canvas pixel-read)
+   3. Quagga (1D barcodes: EAN, Code128, Code39, UPC etc.)
+*/
+async function scanImageMultiEngine(url, file){
+  // Engine 1: ZXing
+  if(window.ZXing){
+    try{
+      const reader = new ZXing.BrowserMultiFormatReader();
+      const result = await reader.decodeFromImageUrl(url);
+      if(result && result.getText()) return result.getText().trim();
+    }catch(e){ /* fall through */ }
+  }
+
+  // Engine 2: jsQR via canvas
+  if(window.jsQR){
+    try{
+      const code = await scanWithJsQR(url);
+      if(code) return code;
+    }catch(e){ /* fall through */ }
+  }
+
+  // Engine 3: Quagga (1D barcodes)
+  if(window.Quagga){
+    try{
+      const code = await scanWithQuagga(url, file);
+      if(code) return code;
+    }catch(e){ /* fall through */ }
+  }
+
+  throw new Error('No barcode found by any engine');
+}
+
+function scanWithJsQR(url){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      // Try several downscale factors for robustness
+      const scales = [1, 0.75, 0.5, 1.5];
+      for(const scale of scales){
+        canvas.width  = Math.round(img.width  * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const result = jsQR(imageData.data, imageData.width, imageData.height,
+                            { inversionAttempts: 'attemptBoth' });
+        if(result && result.data){ resolve(result.data.trim()); return; }
+      }
+      reject(new Error('jsQR: no QR code found'));
+    };
+    img.onerror = () => reject(new Error('jsQR: image load failed'));
+    img.src = url;
+  });
+}
+
+function scanWithQuagga(url, file){
+  return new Promise((resolve, reject) => {
+    const readers = ['code_128_reader','ean_reader','ean_8_reader','code_39_reader',
+                     'code_93_reader','upc_reader','upc_e_reader','codabar_reader',
+                     'i2of5_reader','2of5_reader'];
+    Quagga.decodeSingle({
+      decoder: { readers },
+      locate: true,
+      src: url
+    }, result => {
+      if(result && result.codeResult && result.codeResult.code){
+        resolve(result.codeResult.code.trim());
+      } else {
+        reject(new Error('Quagga: no barcode found'));
+      }
+    });
+  });
+}
+
+/* ===================== SCAN RESULT HANDLING ===================== */
+function homeLookupProductId(){
+  const input = document.getElementById('homeProductIdInput');
+  const val = (input.value||'').trim();
+  if(!val){ showToast('Enter a Product ID, e.g. VI000001'); return; }
+  input.value = '';
+  simulateScan(val);
+}
+
+/* Rotates through a mix of genuine / fake / unknown demo codes each time,
+   so repeated taps showcase all three outcomes without needing a real camera. */
+const DEMO_CAMERA_CODES = ['VI000001', 'VI000006', 'VI000003', 'Random Unknown Code'];
+let demoCameraIndex = 0;
+function playCameraDemo(){
+  const overlay = document.getElementById('cameraDemoOverlay');
+  const label = document.getElementById('cameraDemoLabel');
+  const code = DEMO_CAMERA_CODES[demoCameraIndex % DEMO_CAMERA_CODES.length];
+  demoCameraIndex++;
+  label.textContent = 'Simulating live camera scan…';
+  overlay.style.display = 'flex';
+  setTimeout(()=>{
+    label.textContent = 'Detected: ' + code;
+  }, 1100);
+  setTimeout(()=>{
+    overlay.style.display = 'none';
+    simulateScan(code);
+  }, 1800);
+}
+
+function lookupProductId(){
+  const input = document.getElementById('productIdInput');
+  const val = (input.value||'').trim();
+  if(!val){ showToast('Enter a Product ID, e.g. VI000001'); return; }
+  input.value = '';
+  simulateScan(val);
+}
+function simulateScan(code){
+  stopCamera();
+  showLoading('Verifying with Government Database…');
+  setTimeout(()=>{
+    hideLoading();
+    openVerification(code, false);
+  }, 1100);
+}
+function openVerification(code, skipHistoryDup){
+  const product = findGenuine(code);
+  let result;
+  if(product){
+    result = 'genuine';
+  } else if(findKnownFake(code)){
+    result = 'fake';
+  } else {
+    flagAsFake(code); // unknown code: mark fake and persist to the fake registry
+    result = 'fake';
+  }
+  SCAN_HISTORY.unshift({
+    id:'s'+Date.now(), product: product||null, qr: code, result,
+    date: new Date().toLocaleDateString('en-IN'), time: new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})
+  });
+  if(product){
+    RECENT_VERIFIED = RECENT_VERIFIED.filter(p=>p.id!==product.id);
+    RECENT_VERIFIED.unshift(product);
+    RECENT_VERIFIED = RECENT_VERIFIED.slice(0,6);
+  }
+  document.getElementById('profileScanCount').textContent = SCAN_HISTORY.length + ' scans';
+
+  if(product && product.status==='approved'){
+    renderVerifiedScreen(product);
+    go('screen-verified');
+  } else {
+    go('screen-fake');
+  }
+}
+function renderVerifiedScreen(p){
+  document.getElementById('verifiedProductName').textContent = `${p.name} — ${p.brand}`;
+  document.getElementById('verifiedDetails').innerHTML = `
+    <div class="detail-row"><span class="k">Product ID</span><span class="v">${p.productId||'—'}</span></div>
+    <div class="detail-row"><span class="k">Product Name</span><span class="v">${p.name}</span></div>
+    <div class="detail-row"><span class="k">Brand</span><span class="v">${p.brand}</span></div>
+    <div class="detail-row"><span class="k">Category</span><span class="v">${p.category}</span></div>
+    <div class="detail-row"><span class="k">Batch Number</span><span class="v">${p.batch}</span></div>
+    <div class="detail-row"><span class="k">Manufacturing Date</span><span class="v">${p.mfgDate}</span></div>
+    <div class="detail-row"><span class="k">Expiry Date</span><span class="v">${p.expDate}</span></div>
+    <div class="detail-row"><span class="k">Manufacturer</span><span class="v">${p.manufacturer}</span></div>
+    <div class="detail-row"><span class="k">Factory Address</span><span class="v">${p.address}</span></div>
+    <div class="detail-row"><span class="k">Registration No.</span><span class="v">${p.regNo}</span></div>
+    <div class="detail-row"><span class="k">Govt. Approval No.</span><span class="v">${p.govApproval}</span></div>
+    <div class="detail-row"><span class="k">Specifications</span><span class="v">${p.specs}</span></div>
+    <div class="detail-row"><span class="k">Date Registered</span><span class="v">${p.regDate}</span></div>
+    <div class="detail-row"><span class="k">Date Verified</span><span class="v">${p.verifiedDate}</span></div>
+    <div class="detail-row"><span class="k">Verified By</span><span class="v">${p.verifiedBy}</span></div>
+  `;
+}
+
+/* ===================== LOADING OVERLAY ===================== */
+function showLoading(msg){
+  const div = document.createElement('div');
+  div.className='loading-overlay'; div.id='loadingOverlay';
+  div.innerHTML = `<div class="loading-box"><div class="spinner"></div><span>${msg}</span></div>`;
+  document.body.appendChild(div);
+}
+function hideLoading(){ const el=document.getElementById('loadingOverlay'); if(el) el.remove(); }
+
+/* ===================== HISTORY ===================== */
+function renderHistory(){
+  const el = document.getElementById('historyList');
+  if(SCAN_HISTORY.length===0){
+    el.innerHTML = `<div class="empty-state"><div class="ei">🕒</div>No scans yet. Try scanning a product.</div>`;
+    return;
+  }
+  el.innerHTML = SCAN_HISTORY.map(h=>`
+    <div class="list-row">
+      <div class="ic">${h.product ? h.product.icon : '❔'}</div>
+      <div class="body">
+        <div class="t1">${h.product ? h.product.name : 'Unknown Product'}</div>
+        <div class="t2">${h.date} · ${h.time}</div>
+      </div>
+      <span class="pill ${h.result==='genuine'?'approved':'rejected'}">${h.result==='genuine'?'Genuine':(h.result==='pending'?'Pending':(h.result==='recalled'?'Recalled':'Not Found'))}</span>
+    </div>`).join('');
+}
+
+/* ===================== REPORT ===================== */
+function submitReport(){
+  REPORTS.push({id:'r'+Date.now(), date:new Date().toLocaleDateString('en-IN'), status:'submitted'});
+  showToast('Report submitted. A field officer will review it.');
+  go('screen-home');
+}
+
+/* ===================== DARK MODE ===================== */
+function toggleDark(){
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('darkToggle').classList.toggle('on', !isDark);
+}
+
+/* ===================== ADMIN AUTH ===================== */
+const AUTHORIZED_GOV_USERS = [
+  {
+    email: "gov1@verifyindia.gov.in",
+    password: "VI@2026#01",
+    name: "Government Officer 1"
+  },
+  {
+    email: "gov2@verifyindia.gov.in",
+    password: "VI@2026#02",
+    name: "Government Officer 2"
+  },
+  {
+    email: "admin@verifyindia.gov.in",
+    password: "VI@2026#ADMIN",
+    name: "Government Administrator"
+  }
+];
+
+function adminLogin(){
+
+  const email = document.getElementById('adminId').value.trim().toLowerCase();
+  const pass = document.getElementById('adminPass').value;
+
+  if(!email || !pass){
+    showToast('Please enter Government email and password');
+    return;
+  }
+
+  const officer = AUTHORIZED_GOV_USERS.find(
+    user => user.email === email && user.password === pass
+  );
+
+  if(!officer){
+    showToast('Invalid Government credentials');
+    return;
+  }
+
+  showLoading('Authenticating Government credentials…');
+
+  setTimeout(() => {
+
+    hideLoading();
+
+    currentAdmin = {
+      name: officer.name,
+      email: officer.email
+    };
+
+    document.getElementById('adminNameLbl').textContent =
+      officer.name;
+
+    go('screen-admin-dash');
+
+    showToast('Government login successful');
+
+  }, 900);
+}
+/* ===================== ADMIN DASHBOARD ===================== */
+function renderDashboard(){
+  document.getElementById('statTotal').textContent = PRODUCTS.length;
+  document.getElementById('statToday').textContent = SCAN_HISTORY.length;
+  document.getElementById('statReports').textContent = FAKE_DB.length + REPORTS.length;
+  document.getElementById('statPending').textContent = PRODUCTS.filter(p=>p.status==='pending_verification').length;
+  document.getElementById('statApproved').textContent = PRODUCTS.filter(p=>p.status==='approved').length;
+  document.getElementById('statExpired').textContent = FAKE_DB.filter(f=>f.source==='auto').length;
+
+  const activity = document.getElementById('activityList');
+  const events = [...SCAN_HISTORY.slice(0,4).map(h=>({icon:'📷', t:`Scan: ${h.product?h.product.name:'Unknown code'}`, s:`${h.date} · ${h.time}`}))];
+  if(events.length===0){
+    activity.innerHTML = `<div class="empty-state"><div class="ei">📊</div>No activity yet today.</div>`;
+  } else {
+    activity.innerHTML = events.map(e=>`
+      <div class="list-row"><div class="ic">${e.icon}</div><div class="body"><div class="t1">${e.t}</div><div class="t2">${e.s}</div></div></div>
+    `).join('');
+  }
+}
+
+/* ===================== ADMIN: MANAGE PRODUCTS ===================== */
+function filterAdmin(f, el){
+  adminFilter = f;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderAdminProducts();
+}
+function openApprovalPage(){
+  adminFilter = 'pending_verification';
+
+  go('screen-admin-products');
+
+  setTimeout(() => {
+
+    document.querySelectorAll('.tab').forEach(t => {
+      t.classList.remove('active');
+    });
+
+    const pendingTab =
+      document.querySelector('.tab[data-f="pending_verification"]');
+
+    if(pendingTab){
+      pendingTab.classList.add('active');
+    }
+
+    renderAdminProducts();
+
+  }, 50);
+}
+
+
+function approveProduct(productId){
+
+  const product = PRODUCTS.find(
+    p => p.productId === productId
+  );
+
+  if(!product){
+    showToast('Product not found');
+    return;
+  }
+
+  product.status = 'approved';
+  product.verificationStatus = 'verified';
+
+  product.verifiedBy =
+    currentAdmin ? currentAdmin.name : 'Government Officer';
+
+  product.verifiedDate =
+    new Date().toLocaleDateString('en-IN');
+
+  renderAdminProducts();
+  renderDashboard();
+
+  showToast('Product approved successfully');
+
+}
+
+
+function renderAdminProducts(){
+
+  const el =
+    document.getElementById('adminProductList');
+
+  /* FAKE BARCODE TAB */
+
+  if(adminFilter === 'fake'){
+
+    if(FAKE_DB.length === 0){
+
+      el.innerHTML = `
+        <div class="empty-state">
+          <div class="ei">🚫</div>
+          No fake barcodes on record.
+        </div>`;
+
+      return;
+    }
+
+    el.innerHTML = FAKE_DB.map(f => `
+
+      <div class="list-row">
+
+        <div class="ic">🚫</div>
+
+        <div class="body">
+
+          <div class="t1">
+            ${f.productId ? f.productId + ' · ' + f.code : f.code}
+          </div>
+
+          <div class="t2">
+            ${f.reason} · Flagged ${f.flaggedAt}
+          </div>
+
+        </div>
+
+        <span class="pill rejected">
+          ${f.source === 'auto' ? 'Auto-flagged' : 'Known Fake'}
+        </span>
+
+      </div>
+
+    `).join('');
+
+    return;
+  }
+
+
+  /* PRODUCT LIST */
+
+  let list =
+    adminFilter === 'all'
+      ? PRODUCTS
+      : PRODUCTS.filter(
+          p => p.status === adminFilter
+        );
+
+
+  if(list.length === 0){
+
+    el.innerHTML = `
+      <div class="empty-state">
+
+        <div class="ei">📦</div>
+
+        No products in this category.
+
+      </div>`;
+
+    return;
+  }
+
+
+  el.innerHTML = list.map(p => {
+
+    const isPending =
+      p.status === 'pending_verification';
+
+    return `
+
+      <div class="list-row">
+
+        <div class="ic">
+          ${p.icon}
+        </div>
+
+        <div class="body">
+
+          <div class="t1">
+            ${p.name}
+          </div>
+
+          <div class="t2">
+            ${p.productId || '—'}
+            · ${p.brand}
+            · Batch ${p.batch}
+          </div>
+
+        </div>
+
+        ${
+          isPending
+
+          ? `
+
+            <button
+              class="btn"
+              style="width:auto;padding:8px 12px;font-size:12px;"
+              onclick="approveProduct('${p.productId}')">
+
+              ✓ Approve
+
+            </button>
+
+          `
+
+          : `
+
+            <span class="pill approved">
+              ✓ Approved
+            </span>
+
+          `
+        }
+
+      </div>
+
+    `;
+
+  }).join('');
+}
+/* ===================== ADMIN: ADD PRODUCT ===================== */
+function openQRGenerator(){
+
+  const approved = PRODUCTS.filter(
+    p => p.status === 'approved'
+  );
+
+  if(approved.length === 0){
+    showToast('No approved products available');
+    return;
+  }
+
+  const product = approved[0];
+
+  document.getElementById('qrResultName').textContent =
+    product.name;
+
+  const wrap =
+    document.getElementById('qrCanvasWrap');
+
+  wrap.innerHTML = '';
+
+  if(window.QRCode){
+
+    new QRCode(wrap, {
+      text: product.qr || product.productId,
+      width: 180,
+      height: 180,
+      colorDark: '#4B0A7A',
+      colorLight: '#ffffff'
+    });
+
+  } else {
+
+    wrap.innerHTML = `
+      <div style="font-family:monospace;padding:20px;">
+        ${product.qr || product.productId}
+      </div>
+    `;
+
+  }
+
+  go('screen-qr-result');
+
+  showToast('QR generated successfully');
+}
+function exportProductData(){
+  if(PRODUCTS.length === 0){
+    showToast('No product data available');
+    return;
+  }
+
+  let csv = 'Product ID,Product Name,Brand,Category,Status,Verification Status,Verified By,Registration Date,Verification Date\n';
+
+  PRODUCTS.forEach(p => {
+    csv += `"${p.productId || ''}","${p.name || ''}","${p.brand || ''}","${p.category || ''}","${p.status || ''}","${p.verificationStatus || ''}","${p.verifiedBy || ''}","${p.regDate || ''}","${p.verifiedDate || ''}"\n`;
+  });
+
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'VERIFY_INDIA_Product_Data.csv';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+
+  showToast('Product data exported successfully');
+}
+function submitProduct(){
+  const name = document.getElementById('f-name').value.trim();
+  const brand = document.getElementById('f-brand').value.trim();
+  if(!name || !brand){ showToast('Please fill in at least product name and brand'); return; }
+  const newQr = 'VI-'+Math.random().toString(36).substring(2,8).toUpperCase();
+  const nextN = PRODUCTS.length + FAKE_DB.length + 1;
+  const newProductId = toProductId(nextN);
+  const product = {
+    id:'p'+Date.now(), productId:newProductId, qr:newQr, codes:[newQr, newProductId], name, brand,
+    category: document.getElementById('f-category').value || 'General',
+    manufacturer: document.getElementById('f-manufacturer').value || '—',
+    license: document.getElementById('f-license').value || '—',
+    address: document.getElementById('f-address').value || '—',
+    batch: document.getElementById('f-batch').value || '—',
+    mfgDate: document.getElementById('f-mfgdate').value || '—',
+    expDate: document.getElementById('f-expdate').value || '—',
+    regNo: 'REG-IN-'+Math.floor(100000+Math.random()*900000),
+    govApproval: 'GOI-APR-'+Math.floor(100000+Math.random()*900000),
+    desc: document.getElementById('f-desc').value || '',
+    specs: '—', icon:'📦', status:'pending_verification', verificationStatus:'unverified',
+    verifiedBy:'—', regDate:new Date().toLocaleDateString('en-IN'), verifiedDate:'—', img:null
+  };
+  PRODUCTS.unshift(product);
+  document.getElementById('qrResultName').textContent = product.name;
+  const wrap = document.getElementById('qrCanvasWrap');
+  wrap.innerHTML = '';
+  if(window.QRCode){
+    new QRCode(wrap, { text: product.qr, width:180, height:180, colorDark:'#4B0A7A', colorLight:'#ffffff' });
+  } else {
+    wrap.innerHTML = `<div style="font-family:monospace; padding:20px;">${product.qr}</div>`;
+  }
+  go('screen-qr-result');
+  showToast('Product registered — awaiting approval');
+}
+</script>
+</body>
+</html>
