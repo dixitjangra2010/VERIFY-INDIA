@@ -833,6 +833,18 @@ let PRODUCTS = GENUINE_NUMBERS.map(n=>{
   };
 });
 
+function saveProducts() {
+    localStorage.setItem('verifyIndiaProducts', JSON.stringify(PRODUCTS));
+}
+
+try {
+    const savedProducts = localStorage.getItem('verifyIndiaProducts');
+    if (savedProducts) {
+        PRODUCTS = JSON.parse(savedProducts);
+    }
+} catch (error) {
+    console.log('Could not load saved products');
+}
 // Known-fake registry: pre-seeded with 3,4,5,7, and grows automatically whenever an
 // unrecognized barcode is scanned (per requirement: unknown codes are flagged fake and stored).
 let FAKE_DB = KNOWN_FAKE_NUMBERS.map(n=>({
@@ -1513,7 +1525,7 @@ function approveProduct(productId){
 
   product.verifiedDate =
     new Date().toLocaleDateString('en-IN');
-
+    saveProducts();
   renderAdminProducts();
   renderDashboard();
 
@@ -1748,9 +1760,10 @@ function submitProduct(){
     desc: document.getElementById('f-desc').value || '',
     specs: '—', icon:'📦', status:'pending_verification', verificationStatus:'unverified',
     verifiedBy:'—', regDate:new Date().toLocaleDateString('en-IN'), verifiedDate:'—', img:null
-  };
+ . };
   PRODUCTS.unshift(product);
-  document.getElementById('qrResultName').textContent = product.name;
+saveProducts();
+document.getElementById('qrResultName').textContent = product.name;
   const wrap = document.getElementById('qrCanvasWrap');
   wrap.innerHTML = '';
   if(window.QRCode){
